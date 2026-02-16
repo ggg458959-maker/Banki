@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Integrado - Gabriel</title>
+    <style>
+        :root { --inter: #FF7A00; --bg: #000; --card: #1c1c1e; --text: #fff; --red: #ff3b30; --green: #34c759; --blue: #007aff; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 100px; }
+        
+        .edit { background: transparent; border: none; color: white; font-weight: bold; outline: none; border-bottom: 1px dashed #333; }
+        .card { background: var(--card); margin: 12px; padding: 18px; border-radius: 16px; }
+        
+        /* Mercado Digital */
+        .mercado-header { color: var(--green); font-weight: bold; font-size: 0.8em; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .vendas-valor { font-size: 1.5em; font-weight: bold; color: var(--green); }
+        
+        /* Banco e Cartão */
+        .label { color: #8e8e93; font-size: 0.75em; margin-bottom: 5px; }
+        .fatura { color: var(--red); font-size: 1.4em; font-weight: bold; }
+        .barra-limite { width: 100%; height: 6px; background: #333; border-radius: 3px; margin-top: 10px; overflow: hidden; }
+        .limite-usado { height: 100%; background: var(--inter); width: 60%; transition: 0.5s; }
+
+        /* Grade de Ícones */
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 12px; }
+        .item { display: flex; flex-direction: column; align-items: center; font-size: 0.65em; cursor: pointer; text-align: center; }
+        .box { width: 55px; height: 55px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5em; background: #2c2c2e; margin-bottom: 5px; }
+
+        /* Botões */
+        .btn { background: var(--inter); color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-sacar { background: var(--green); font-size: 0.8em; padding: 5px 10px; width: auto; margin: 0; }
+        
+        #modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal-cnt { background: #1c1c1e; padding: 25px; border-radius: 20px; width: 80%; text-align: center; border: 1px solid #333; }
+        
+        .nav { position: fixed; bottom: 0; width: 100%; background: #1c1c1e; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; }
+        .blocked { opacity: 0.5; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div class="card" style="border: 1px solid var(--green);">
+    <div class="mercado-header">
+        <span>MERCADO DIGITAL (AFILIADO)</span>
+        <button class="btn btn-sacar" onclick="sacarComissao()">SACAR</button>
+    </div>
+    <div class="label">Comissões a receber</div>
+    <div class="vendas-valor">R$ <span id="vendas-pendentes">1.250,00</span></div>
+    <div style="font-size: 0.6em; color: var(--green); margin-top: 5px;">▲ 12% em relação a ontem</div>
+</div>
+
+<div class="card">
+    <div class="label">Olá, <input type="text" id="nome" class="edit" value="Gabriel" oninput="salvar()"> (Saldo em Conta)</div>
+    <div style="font-size: 1.8em; font-weight: bold;">R$ <input type="text" id="saldo" class="edit" value="7.000,00" oninput="salvar()" style="width: 150px;"></div>
+    <div style="display: flex; gap: 8px; margin-top: 15px;">
+        <button class="btn" style="flex:1" onclick="abrirTrans('Pix')">Pix</button>
+        <button class="btn" style="flex:1; background:#333" onclick="abrirTrans('Pagar')">Pagar</button>
+    </div>
+</div>
+
+<div class="card" id="card-credito">
+    <div style="display: flex; justify-content: space-between;">
+        <span style="font-weight: bold;">Cartão Black</span>
+        <span id="status-bloqueio" onclick="toggleBloqueio()" style="cursor: pointer; color: var(--blue);">🔓 Desbloqueado</span>
+    </div>
+    <div class="label" style="margin-top: 10px;">Fatura Aberta (Dívida)</div>
+    <div class="fatura">R$ <input type="text" id="divida" class="edit" value="2.450,00" oninput="salvar()" style="color: var(--red); width: 130px;"></div>
+    <div class="barra-limite"><div class="limite-usado" id="barra"></div></div>
+    <div class="label" style="margin-top: 5px; font-size: 0.6em;">Limite Disponível: R$ 1.500,00</div>
+</div>
+
+<div style="padding: 0 20px; font-weight: bold; font-size: 0.9em; color: #8e8e93;">SHOPPING & VIAGENS</div>
+<div class="grid" id="area-shop">
+    <div class="item" onclick="comprar('iPhone 15', 7200)"><div class="box">📱</div><span>iPhone</span></div>
+    <div class="item" onclick="comprar('Disney', 5500)"><div class="box">🏰</div><span>Disney</span></div>
+    <div class="item" onclick="comprar('Roblox', 250)"><div class="box">🎮</div><span>Roblox</span></div>
+    <div class="item" onclick="comprar('Gift Card', 100)"><div class="box">🕹️</div><span>G. Play</span></div>
+</div>
+
+<div style="padding: 15px 20px 5px; font-weight: bold; font-size: 0.9em; color: #8e8e93;">INVESTIR (SORTE/AZAR)</div>
+<div class="grid">
+    <div class="item" onclick="jogar('Porquinho')"><div class="box" style="color:var(--green)">🐷</div><span>Porquinho</span></div>
+    <div class="item" onclick="jogar('Crypto')"><div class="box" style="color:var(--green)">₿</div><span>Crypto</span></div>
+    <div class="item" onclick="jogar('CDB')"><div class="box" style="color:var(--green)">📈</div><span>CDB</span></div>
+    <div class="item" onclick="jogar('Ações')"><div class="box" style="color:var(--green)">📊</div><span>Ações</span></div>
+</div>
+
+<div class="nav">
+    <div style="color: var(--inter);">🏠<br>Home</div>
+    <div>📈<br>Vendas</div>
+    <div>🛒<br>Shop</div>
+    <div>💳<br>Cartão</div>
+</div>
+
+<div id="modal">
+    <div class="modal-cnt">
+        <h2 id="m-tit"></h2>
+        <p id="m-dsc" style="color: #8e8e93;"></p>
+        <div id="m-body"></div>
+        <button class="btn" id="m-btn">Confirmar</button>
+        <p onclick="fechar()" style="color: #8e8e93; margin-top: 15px; cursor: pointer; font-size: 0.8em;">Cancelar</p>
+    </div>
+</div>
+
+<script>
+    let cartaoBloqueado = false;
+
+    function salvar() {
+        localStorage.setItem('g_nome', document.getElementById('nome').value);
+        localStorage.setItem('g_saldo', document.getElementById('saldo').value);
+        localStorage.setItem('g_divida', document.getElementById('divida').value);
+    }
+
+    function carregar() {
+        if(localStorage.getItem('g_nome')) document.getElementById('nome').value = localStorage.getItem('g_nome');
+        if(localStorage.getItem('g_saldo')) document.getElementById('saldo').value = localStorage.getItem('g_saldo');
+        if(localStorage.getItem('g_divida')) document.getElementById('divida').value = localStorage.getItem('g_divida');
+    }
+
+    function fechar() { document.getElementById('modal').style.display = 'none'; }
+
+    function toggleBloqueio() {
+        cartaoBloqueado = !cartaoBloqueado;
+        document.getElementById('status-bloqueio').innerText = cartaoBloqueado ? "🔒 Bloqueado" : "🔓 Desbloqueado";
+        document.getElementById('status-bloqueio').style.color = cartaoBloqueado ? "var(--red)" : "var(--blue)";
+        document.getElementById('area-shop').className = cartaoBloqueado ? "grid blocked" : "grid";
+    }
+
+    function sacarComissao() {
+        let v = parseFloat(document.getElementById('vendas-pendentes').innerText.replace('.','').replace(',','.'));
+        let s = parseFloat(document.getElementById('saldo').value.replace('.','').replace(',','.'));
+        document.getElementById('saldo').value = (s + v).toLocaleString('pt-br', {minimumFractionDigits:2});
+        document.getElementById('vendas-pendentes').innerText = "0,00";
+        alert("Comissão sacada para sua conta!");
+        salvar();
+    }
+
+    function comprar(item, preco) {
+        if(cartaoBloqueado) return;
+        document.getElementById('m-tit').innerText = item;
+        document.getElementById('m-dsc').innerText = "Valor: R$ " + preco.toLocaleString();
+        document.getElementById('m-body').innerHTML = `
+            <select id="pag">
+                <option value="s">Pagar com Saldo</option>
+                <option value="d">Pagar com Cartão (Dívida)</option>
+            </select>`;
+        document.getElementById('m-btn').onclick = () => {
+            let p = document.getElementById('pag').value;
+            if(p === 's') {
+                let s = parseFloat(document.getElementById('saldo').value.replace(/\./g,'').replace(',','.'));
+                if(s >= preco) {
+                    document.getElementById('saldo').value = (s - preco).toLocaleString('pt-br',{minimumFractionDigits:2});
+                    alert("Pago com sucesso!");
+                } else { alert("Saldo insuficiente"); }
+            } else {
+                let d = parseFloat(document.getElementById('divida').value.replace(/\./g,'').replace(',','.'));
+                document.getElementById('divida').value = (d + preco).toLocaleString('pt-br',{minimumFractionDigits:2});
+                alert("Adicionado à sua dívida!");
+            }
+            salvar(); fechar();
+        };
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    function jogar(t) {
+        document.getElementById('m-tit').innerText = t;
+        document.getElementById('m-dsc').innerText = "Arrisque e ganhe o dobro!";
+        document.getElementById('m-body').innerHTML = `<input type="number" id="v-j" placeholder="Valor R$">`;
+        document.getElementById('m-btn').onclick = () => {
+            let s = parseFloat(document.getElementById('saldo').value.replace(/\./g,'').replace(',','.'));
+            let v = parseFloat(document.getElementById('v-j').value);
+            if(s >= v) {
+                if(Math.random() > 0.5) {
+                    document.getElementById('saldo').value = (s + v).toLocaleString('pt-br',{minimumFractionDigits:2});
+                    alert("🍀 GANHOU!");
+                } else {
+                    document.getElementById('saldo').value = (s - v).toLocaleString('pt-br',{minimumFractionDigits:2});
+                    alert("💀 PERDEU!");
+                }
+                salvar(); fechar();
+            } else { alert("Saldo insuficiente"); }
+        };
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    function abrirTrans(t) {
+        document.getElementById('m-tit').innerText = t;
+        document.getElementById('m-body').innerHTML = `<input type="number" id="v-t" placeholder="Valor">`;
+        document.getElementById('m-btn').onclick = () => {
+            let s = parseFloat(document.getElementById('saldo').value.replace(/\./g,'').replace(',','.'));
+            let v = parseFloat(document.getElementById('v-t').value);
+            if(s >= v) {
+                document.getElementById('saldo').value = (s - v).toLocaleString('pt-br',{minimumFractionDigits:2});
+                alert(t + " concluído!"); fechar(); salvar();
+            } else { alert("Saldo insuficiente"); }
+        };
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    window.onload = carregar;
+</script>
+</body>
+</html>
+
